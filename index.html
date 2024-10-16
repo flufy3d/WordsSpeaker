@@ -125,6 +125,35 @@
 <div id="wordList"></div>
 
 <script>
+
+
+// 播放发音
+async function playAudio(word) {
+  const apiKey = 'AIzaSyDV7R_xwuAXl_dgLLEmz5uzluQ4D-akETI';
+  const url = `https://texttospeech.googleapis.com/v1/text:synthesize?key=${apiKey}`;
+
+  const data = {
+    input: { text: word },
+    voice: { languageCode: 'hu-HU', ssmlGender: 'NEUTRAL' },
+    audioConfig: { audioEncoding: 'MP3' },
+  };
+
+  try {
+    const response = await fetch(url, {
+      method: 'POST',
+      body: JSON.stringify(data),
+      headers: { 'Content-Type': 'application/json' },
+    });
+    const json = await response.json();
+    const audioContent = json.audioContent;
+    const audio = new Audio(`data:audio/mp3;base64,${audioContent}`);
+    audio.play();
+  } catch (error) {
+    console.error('获取音频失败：', error);
+  }
+}
+
+
 document.getElementById('startButton').addEventListener('click', function() {
     const words = document.getElementById('wordsInput').value.split('\n').filter(word => word.trim() !== '');
     const wordListDiv = document.getElementById('wordList');
@@ -149,10 +178,8 @@ document.getElementById('startButton').addEventListener('click', function() {
         const playButton = document.createElement('button');
         playButton.textContent = '播放发音';
         
-        const audio = new Audio(`https://translate.google.com/translate_tts?ie=UTF-8&q=${encodeURIComponent(word)}&tl=hu&client=tw-ob`);
-        
         playButton.addEventListener('click', function() {
-            audio.play();
+            playAudio(word)
         });
 
         // 获取中文翻译
