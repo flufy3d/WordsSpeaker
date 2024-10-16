@@ -1,0 +1,192 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>匈牙利语听写练习工具</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            padding: 20px;
+            margin: 0;
+            background-color: #f0f0f0;
+            color: #333;
+        }
+
+        h1 {
+            text-align: center;
+            color: #4CAF50;
+        }
+
+        textarea {
+            width: 100%;
+            height: 120px;
+            margin-bottom: 20px;
+            padding: 10px;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+            font-size: 16px;
+            box-sizing: border-box;
+            resize: none;
+        }
+
+        button {
+            width: 100%;
+            padding: 15px;
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            font-size: 16px;
+            cursor: pointer;
+            margin-bottom: 15px;
+        }
+
+        button:hover {
+            background-color: #45a049;
+        }
+
+        .word-container {
+            margin-top: 20px;
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: space-between;
+            align-items: center;
+            background-color: #fff;
+            padding: 10px;
+            border-radius: 5px;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+        }
+
+        .word-container button {
+            flex: 1;
+            margin-right: 10px;
+            padding: 10px;
+            background-color: #2196F3;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            font-size: 14px;
+            cursor: pointer;
+        }
+
+        .word-container button:hover {
+            background-color: #0b7dda;
+        }
+
+        .word-container span {
+            flex: 2;
+            font-size: 16px;
+        }
+
+        .word-container span.translation {
+            color: #888;
+            font-size: 14px;
+        }
+
+        @media (max-width: 600px) {
+            body {
+                padding: 10px;
+            }
+
+            textarea {
+                height: 100px;
+                font-size: 14px;
+            }
+
+            button {
+                padding: 12px;
+                font-size: 14px;
+            }
+
+            .word-container {
+                flex-direction: column;
+                align-items: flex-start;
+            }
+
+            .word-container button {
+                margin: 10px 0;
+                width: 100%;
+            }
+
+            .word-container span {
+                margin-bottom: 10px;
+            }
+        }
+    </style>
+</head>
+<body>
+
+<h1>匈牙利语听写练习工具</h1>
+
+<textarea id="wordsInput" placeholder="请输入匈牙利语单词，每行一个"></textarea><br>
+<button id="startButton">生成播放和翻译</button>
+
+<div id="wordList"></div>
+
+<script>
+document.getElementById('startButton').addEventListener('click', function() {
+    const words = document.getElementById('wordsInput').value.split('\n').filter(word => word.trim() !== '');
+    const wordListDiv = document.getElementById('wordList');
+    wordListDiv.innerHTML = ''; // 清空之前的内容
+
+    words.forEach(async word => {
+        const wordContainer = document.createElement('div');
+        wordContainer.className = 'word-container';
+
+        // 创建显示单词按钮
+        const showButton = document.createElement('button');
+        showButton.textContent = '显示单词';
+        const wordSpan = document.createElement('span');
+        wordSpan.textContent = word;
+        wordSpan.style.display = 'none'; // 初始隐藏
+
+        showButton.addEventListener('click', function() {
+            wordSpan.style.display = 'inline';
+        });
+
+        // 创建播放按钮
+        const playButton = document.createElement('button');
+        playButton.textContent = '播放发音';
+        
+        const audio = new Audio(`https://translate.google.com/translate_tts?ie=UTF-8&q=${encodeURIComponent(word)}&tl=hu&client=tw-ob`);
+        
+        playButton.addEventListener('click', function() {
+            audio.play();
+        });
+
+        // 获取中文翻译
+        const translation = await getTranslation(word);
+        const translationSpan = document.createElement('span');
+        translationSpan.className = 'translation';
+        translationSpan.textContent = ' - ' + translation;
+
+        // 将元素添加到页面
+        wordContainer.appendChild(showButton);
+        wordContainer.appendChild(wordSpan);
+        wordContainer.appendChild(playButton);
+        wordContainer.appendChild(translationSpan);
+
+        wordListDiv.appendChild(wordContainer);
+    });
+});
+
+// 获取中文翻译的函数
+async function getTranslation(text) {
+    const url = `https://translate.googleapis.com/translate_a/single?client=gtx&sl=hu&tl=zh-CN&dt=t&q=${encodeURIComponent(text)}`;
+
+    try {
+        const response = await fetch(url);
+        const data = await response.json();
+        // 解析返回的翻译结果
+        const translatedText = data[0][0][0];
+        return translatedText;
+    } catch (error) {
+        console.error('翻译失败：', error);
+        return '翻译不可用';
+    }
+}
+</script>
+
+</body>
+</html>
