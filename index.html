@@ -5,6 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>匈牙利语听写练习工具</title>
     <style>
+        /* 保持原有的CSS样式 */
         body {
             font-family: Arial, sans-serif;
             padding: 20px;
@@ -84,6 +85,25 @@
             font-size: 14px;
         }
 
+        /* 语言选择器样式 */
+        .language-selector {
+            text-align: center;
+            margin-bottom: 20px;
+        }
+
+        .language-selector img {
+            width: 30px;
+            height: 20px;
+            cursor: pointer;
+            margin: 0 5px;
+            border: 1px solid #ccc;
+            border-radius: 3px;
+        }
+
+        .language-selector img.selected {
+            border-color: #4CAF50;
+        }
+
         @media (max-width: 600px) {
             body {
                 padding: 10px;
@@ -117,7 +137,14 @@
 </head>
 <body>
 
-<h1>匈牙利语听写练习工具</h1>
+<h1 id="title">匈牙利语听写练习工具</h1>
+
+<!-- 语言选择器，使用国旗图标 -->
+<div class="language-selector">
+    <img src="https://flagcdn.com/w20/cn.png" alt="中文" id="lang-zh" data-lang="zh">
+    <img src="https://flagcdn.com/w20/us.png" alt="English" id="lang-en" data-lang="en">
+    <img src="https://flagcdn.com/w20/hu.png" alt="Magyar" id="lang-hu" data-lang="hu">
+</div>
 
 <textarea id="wordsInput" placeholder="请输入匈牙利语单词，每行一个"></textarea><br>
 <button id="startButton">生成播放和翻译</button>
@@ -125,11 +152,65 @@
 <div id="wordList"></div>
 
 <script>
+// 多语言支持
+const translations = {
+    zh: {
+        title: "匈牙利语听写练习工具",
+        placeholder: "请输入匈牙利语单词，每行一个",
+        startButton: "生成播放和翻译",
+        showWord: "显示单词",
+        playAudio: "播放发音",
+        translationUnavailable: "翻译不可用",
+    },
+    en: {
+        title: "Hungarian Dictation Practice Tool",
+        placeholder: "Please enter Hungarian words, one per line",
+        startButton: "Generate Playback and Translation",
+        showWord: "Show Word",
+        playAudio: "Play Audio",
+        translationUnavailable: "Translation Unavailable",
+    },
+    hu: {
+        title: "Magyar Diktálási Gyakorlóeszköz",
+        placeholder: "Kérjük, adja meg a magyar szavakat, soronként egyet",
+        startButton: "Lejátszás és fordítás létrehozása",
+        showWord: "Szó megjelenítése",
+        playAudio: "Kiejtés lejátszása",
+        translationUnavailable: "Fordítás nem érhető el",
+    }
+};
 
+// 设置默认语言为中文
+let currentLanguage = 'zh';
+
+// 更新界面文本
+function updateLanguageTexts() {
+    document.getElementById('title').textContent = translations[currentLanguage].title;
+    document.getElementById('wordsInput').placeholder = translations[currentLanguage].placeholder;
+    document.getElementById('startButton').textContent = translations[currentLanguage].startButton;
+
+    // 更新语言选择器的选中状态
+    document.querySelectorAll('.language-selector img').forEach(img => {
+        img.classList.remove('selected');
+        if (img.dataset.lang === currentLanguage) {
+            img.classList.add('selected');
+        }
+    });
+}
+
+// 监听语言选择器的点击事件
+document.querySelectorAll('.language-selector img').forEach(img => {
+    img.addEventListener('click', function() {
+        currentLanguage = this.dataset.lang;
+        updateLanguageTexts();
+    });
+});
+
+updateLanguageTexts(); // 初始化界面文本
 
 // 播放发音
 async function playAudio(word) {
-  const apiKey = 'AIzaSyDV7R_xwuAXl_dgLLEmz5uzluQ4D-akETI';
+  const apiKey = 'YOUR_GOOGLE_CLOUD_API_KEY';
   const url = `https://texttospeech.googleapis.com/v1/text:synthesize?key=${apiKey}`;
 
   const data = {
@@ -153,9 +234,8 @@ async function playAudio(word) {
   }
 }
 
-
 document.getElementById('startButton').addEventListener('click', function() {
-    const wordsInput = document.getElementById('wordsInput')
+    const wordsInput = document.getElementById('wordsInput');
     const words = wordsInput.value.split('\n').filter(word => word.trim() !== '');
     const wordListDiv = document.getElementById('wordList');
     wordsInput.value = '';
@@ -168,7 +248,7 @@ document.getElementById('startButton').addEventListener('click', function() {
 
         // 创建显示单词按钮
         const showButton = document.createElement('button');
-        showButton.textContent = '显示单词';
+        showButton.textContent = translations[currentLanguage].showWord;
         const wordSpan = document.createElement('span');
         wordSpan.textContent = word;
         wordSpan.style.display = 'none'; // 初始隐藏
@@ -179,13 +259,13 @@ document.getElementById('startButton').addEventListener('click', function() {
 
         // 创建播放按钮
         const playButton = document.createElement('button');
-        playButton.textContent = '播放发音';
-        
+        playButton.textContent = translations[currentLanguage].playAudio;
+
         playButton.addEventListener('click', function() {
-            playAudio(word)
+            playAudio(word);
         });
 
-        // 获取中文翻译
+        // 获取翻译
         const translation = await getTranslation(word);
         const translationSpan = document.createElement('span');
         translationSpan.className = 'translation';
@@ -199,11 +279,15 @@ document.getElementById('startButton').addEventListener('click', function() {
 
         wordListDiv.appendChild(wordContainer);
     });
+
+    document.getElementById('startButton').disabled = false;
 });
 
-// 获取中文翻译的函数
+// 获取翻译的函数
 async function getTranslation(text) {
-    const url = `https://translate.googleapis.com/translate_a/single?client=gtx&sl=hu&tl=zh-CN&dt=t&q=${encodeURIComponent(text)}`;
+    // 设置目标语言
+    let targetLanguage = currentLanguage === 'hu' ? 'en' : currentLanguage;
+    const url = `https://translate.googleapis.com/translate_a/single?client=gtx&sl=hu&tl=${targetLanguage}&dt=t&q=${encodeURIComponent(text)}`;
 
     try {
         const response = await fetch(url);
@@ -213,7 +297,7 @@ async function getTranslation(text) {
         return translatedText;
     } catch (error) {
         console.error('翻译失败：', error);
-        return '翻译不可用';
+        return translations[currentLanguage].translationUnavailable;
     }
 }
 </script>
