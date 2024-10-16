@@ -155,8 +155,10 @@ async function playAudio(word) {
 
 
 document.getElementById('startButton').addEventListener('click', function() {
-    const words = document.getElementById('wordsInput').value.split('\n').filter(word => word.trim() !== '');
+    const wordsInput = document.getElementById('wordsInput')
+    const words = wordsInput.value.split('\n').filter(word => word.trim() !== '');
     const wordListDiv = document.getElementById('wordList');
+    wordsInput.value = '';
     wordListDiv.innerHTML = ''; // 清空之前的内容
 
     words.forEach(async word => {
