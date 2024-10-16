@@ -160,6 +160,7 @@ document.getElementById('startButton').addEventListener('click', function() {
     const wordListDiv = document.getElementById('wordList');
     wordsInput.value = '';
     wordListDiv.innerHTML = ''; // 清空之前的内容
+    document.getElementById('startButton').disabled = true;
 
     words.forEach(async word => {
         const wordContainer = document.createElement('div');
