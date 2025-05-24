@@ -209,10 +209,17 @@ document.querySelectorAll('.language-selector img').forEach(img => {
 updateLanguageTexts(); // 初始化界面文本
 
 // 播放发音
+// 在全局作用域添加变量跟踪当前播放状态
+let isPlaying = false;
+
 async function playAudio(word) {
+  if(isPlaying) return; // 如果正在播放则直接返回
+  
   const apiKey = 'AIzaSyDV7R_xwuAXl_dgLLEmz5uzluQ4D-akETI';
   const url = `https://texttospeech.googleapis.com/v1/text:synthesize?key=${apiKey}`;
 
+  isPlaying = true; // 设置播放状态
+  
   const data = {
     input: { text: word },
     voice: { languageCode: 'hu-HU', ssmlGender: 'NEUTRAL' },
@@ -228,13 +235,20 @@ async function playAudio(word) {
     const json = await response.json();
     const audioContent = json.audioContent;
     const audio = new Audio(`data:audio/mp3;base64,${audioContent}`);
+    
+    audio.onended = () => {
+      isPlaying = false; // 播放结束后重置状态
+    };
+    
     audio.play();
   } catch (error) {
     console.error('获取音频失败：', error);
+    isPlaying = false; // 出错时也重置状态
   }
 }
 
-document.getElementById('startButton').addEventListener('click', function() {
+// 替换原来的forEach循环
+document.getElementById('startButton').addEventListener('click', async function() {
     const wordsInput = document.getElementById('wordsInput');
     const words = wordsInput.value.split('\n').filter(word => word.trim() !== '');
     const wordListDiv = document.getElementById('wordList');
@@ -242,7 +256,8 @@ document.getElementById('startButton').addEventListener('click', function() {
     wordListDiv.innerHTML = ''; // 清空之前的内容
     document.getElementById('startButton').disabled = true;
 
-    words.forEach(async word => {
+    // 使用for...of循环替代forEach
+    for (const word of words) {
         const wordContainer = document.createElement('div');
         wordContainer.className = 'word-container';
 
