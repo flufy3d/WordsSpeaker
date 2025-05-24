@@ -208,9 +208,20 @@ document.querySelectorAll('.language-selector img').forEach(img => {
 
 updateLanguageTexts(); // 初始化界面文本
 
+
+// Global variable to keep track of the currently playing audio
+let currentPlayingAudio = null;
+
 // 播放发音
 async function playAudio(word) {
-  const apiKey = 'AIzaSyDV7R_xwuAXl_dgLLEmz5uzluQ4D-akETI';
+  // Stop any currently playing audio
+  if (currentPlayingAudio) {
+    currentPlayingAudio.pause();
+    currentPlayingAudio.currentTime = 0; // Reset playback position
+    currentPlayingAudio = null; // Clear the reference
+  }
+
+  const apiKey = 'AIzaSyDV7R_xwuAXl_dgLLEmz5uzluQ4D-akETI'; // Consider moving this to a config or environment variable for security
   const url = `https://texttospeech.googleapis.com/v1/text:synthesize?key=${apiKey}`;
 
   const data = {
@@ -226,14 +237,51 @@ async function playAudio(word) {
       headers: { 'Content-Type': 'application/json' },
     });
     const json = await response.json();
-    const audioContent = json.audioContent;
-    const audio = new Audio(`data:audio/mp3;base64,${audioContent}`);
-    audio.play();
+
+    if (json.audioContent) {
+      const audioContent = json.audioContent;
+      const audio = new Audio(`data:audio/mp3;base64,${audioContent}`);
+      
+      currentPlayingAudio = audio; // Store the new audio instance
+
+      audio.play().catch(error => {
+        console.error('Error playing audio:', error);
+        // If playback fails, clear the reference
+        if (currentPlayingAudio === audio) {
+            currentPlayingAudio = null;
+        }
+      });
+
+      // Optional: Clear the reference when audio finishes playing
+      audio.onended = () => {
+        if (currentPlayingAudio === audio) { // Ensure it's the same audio instance
+          currentPlayingAudio = null;
+        }
+      };
+      audio.onerror = () => { // Handle errors during playback
+        console.error('Audio playback error for word:', word);
+        if (currentPlayingAudio === audio) {
+          currentPlayingAudio = null;
+        }
+      };
+
+    } else {
+      console.error('No audioContent received from API for word:', word, 'Response:', json);
+      // Potentially show an error message to the user
+      alert(`Could not synthesize audio for "${word}". The API might have returned an error.`);
+    }
   } catch (error) {
     console.error('获取音频失败：', error);
+    // Potentially show an error message to the user
+    alert(`Failed to fetch audio for "${word}". Check the console for details.`);
+    // Ensure currentPlayingAudio is cleared on fetch error
+    if (currentPlayingAudio && currentPlayingAudio.src && currentPlayingAudio.src.startsWith('data:audio/mp3')) {
+        // Heuristic: if it looks like it was about to play the one that failed, clear it.
+        // This part is a bit tricky without more context on currentPlayingAudio's state before this try block.
+        // The initial check `if (currentPlayingAudio)` and setting it to `null` at the start of the function is more robust.
+    }
   }
 }
-
 
 
 document.getElementById('startButton').addEventListener('click', async function() { // Make this function async
